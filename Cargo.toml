@@ -1,6 +1,6 @@
 [package]
 name = "librtbit-tracker-comms"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2024"
 description = "HTTP and UDP tracker communication for the rtbit BitTorrent client"
 license = "MIT"
@@ -11,9 +11,9 @@ tokio = "1"
 anyhow = "1"
 futures = "0.3"
 async-stream = "0.3"
-buffers = { git = "http://100.92.54.45:3002/indexarr/librtbit-buffers.git", tag = "v0.1.0", package = "librtbit-buffers" }
-librtbit-core = { git = "http://100.92.54.45:3002/indexarr/librtbit-core.git", tag = "v0.1.0" }
-bencode = { git = "http://100.92.54.45:3002/indexarr/librtbit-bencode.git", tag = "v0.1.0", package = "librtbit-bencode" }
+buffers = { version = "0.1.0", registry = "forgejo", package = "librtbit-buffers" }
+librtbit-core = { version = "0.1.1", registry = "forgejo" }
+bencode = { version = "0.1.0", registry = "forgejo", package = "librtbit-bencode" }
 byteorder = "1"
 serde = "1"
 serde_derive = "1"
