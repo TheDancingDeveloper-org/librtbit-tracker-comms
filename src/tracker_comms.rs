@@ -309,7 +309,7 @@ impl TrackerComms {
 
         let mut queries = request.as_querystring();
         if let Some(url_query) = url.query() {
-            queries.push_str(&format!("&{}", url_query));
+            queries.push_str(&format!("&{url_query}"));
         }
         url.set_query(Some(&queries));
 
@@ -347,7 +347,7 @@ impl TrackerComms {
         client: UdpTrackerClient,
     ) -> anyhow::Result<()> {
         if url.scheme() != "udp" {
-            bail!("expected UDP scheme in {}", url);
+            bail!("expected UDP scheme in {url}");
         }
         let (host, port) = (
             url.host().context("missing host")?,
