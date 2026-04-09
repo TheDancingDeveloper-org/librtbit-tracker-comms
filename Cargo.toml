@@ -13,7 +13,7 @@ futures = "0.3"
 async-stream = "0.3"
 buffers = { version = "0.1.1", registry = "forgejo", package = "librtbit-buffers" }
 librtbit-core = { version = "0.1.1", registry = "forgejo" }
-bencode = { version = "0.1.0", registry = "forgejo", package = "librtbit-bencode" }
+bencode = { version = "0.1.1", registry = "forgejo", package = "librtbit-bencode" }
 byteorder = "1"
 serde = "1"
 serde_derive = "1"
