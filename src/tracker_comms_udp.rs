@@ -16,7 +16,7 @@ use tracing::{debug, debug_span, trace, warn};
 
 const ACTION_CONNECT: u32 = 0;
 const ACTION_ANNOUNCE: u32 = 1;
-// const ACTION_SCRAPE: u32 = 2;
+const ACTION_SCRAPE: u32 = 2;
 const ACTION_ERROR: u32 = 3;
 
 pub const EVENT_NONE: u32 = 0;
@@ -49,6 +49,7 @@ pub struct AnnounceFields {
 pub enum Request {
     Connect,
     Announce(ConnectionId, AnnounceFields),
+    Scrape(ConnectionId, Vec<Id20>),
 }
 
 impl Request {
@@ -95,6 +96,17 @@ impl Request {
                 w.extend_from_slice(&(-1i32).to_be_bytes())?; // num want -1
                 w.extend_from_slice(&fields.port.to_be_bytes())?;
             }
+            Request::Scrape(connection_id, info_hashes) => {
+                if info_hashes.is_empty() || info_hashes.len() > 74 {
+                    bail!("UDP scrape requires between 1 and 74 info hashes")
+                }
+                w.extend_from_slice(&connection_id.to_be_bytes())?;
+                w.extend_from_slice(&ACTION_SCRAPE.to_be_bytes())?;
+                w.extend_from_slice(&transaction_id.to_be_bytes())?;
+                for info_hash in info_hashes {
+                    w.extend_from_slice(&info_hash.0)?;
+                }
+            }
         }
         Ok(w.offset)
     }
@@ -110,10 +122,18 @@ pub struct AnnounceResponse {
     pub addrs: Vec<SocketAddr>,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct ScrapeStats {
+    pub seeders: u32,
+    pub completed: u32,
+    pub leechers: u32,
+}
+
 #[derive(Debug)]
 pub enum Response {
     Connect(ConnectionId),
     Announce(AnnounceResponse),
+    Scrape(Vec<ScrapeStats>),
     #[allow(dead_code)]
     Error(String),
     Unknown,
@@ -207,6 +227,24 @@ impl Response {
                     seeders,
                     addrs,
                 })
+            }
+            ACTION_SCRAPE => {
+                if buf.is_empty() || !buf.len().is_multiple_of(12) {
+                    bail!("invalid UDP scrape response length {}", buf.len())
+                }
+                let mut stats = Vec::with_capacity(buf.len() / 12);
+                while !buf.is_empty() {
+                    let (seeders, b) = u32::parse_num(buf).context("can't parse seeders")?;
+                    let (completed, b) = u32::parse_num(b).context("can't parse completed")?;
+                    let (leechers, b) = u32::parse_num(b).context("can't parse leechers")?;
+                    stats.push(ScrapeStats {
+                        seeders,
+                        completed,
+                        leechers,
+                    });
+                    buf = b;
+                }
+                Response::Scrape(stats)
             }
             ACTION_ERROR => {
                 let msg = CStr::from_bytes_with_nul(buf)
@@ -415,6 +453,21 @@ impl UdpTrackerClient {
             other => bail!("unexpected response {other:?}, expected announce"),
         }
     }
+
+    pub async fn scrape(
+        &self,
+        tracker: SocketAddr,
+        info_hashes: Vec<Id20>,
+    ) -> anyhow::Result<Vec<ScrapeStats>> {
+        let connection_id = self.get_connection_id(tracker).await?;
+        let response = self
+            .request(tracker, Request::Scrape(connection_id, info_hashes))
+            .await?;
+        match response {
+            Response::Scrape(stats) => Ok(stats),
+            other => bail!("unexpected response {other:?}, expected scrape"),
+        }
+    }
 }
 
 #[cfg(test)]
@@ -429,6 +482,41 @@ mod tests {
     };
 
     use super::{ACTION_ANNOUNCE, ACTION_CONNECT, ACTION_ERROR};
+
+    #[test]
+    fn test_udp_scrape_request_and_response() {
+        let connection_id = 0x1234_5678_90ab_cdef;
+        let tid = 42;
+        let hashes = vec![Id20::new([1; 20]), Id20::new([2; 20])];
+        let mut request = [0u8; 64];
+        let len = Request::Scrape(connection_id, hashes.clone())
+            .serialize(tid, &mut request)
+            .unwrap();
+        assert_eq!(len, 56);
+        assert_eq!(u32::from_be_bytes(request[8..12].try_into().unwrap()), 2);
+        assert_eq!(&request[16..36], &hashes[0].0);
+        assert_eq!(&request[36..56], &hashes[1].0);
+
+        let mut response = Vec::new();
+        response.extend_from_slice(&2u32.to_be_bytes());
+        response.extend_from_slice(&tid.to_be_bytes());
+        for values in [[10u32, 20, 30], [40, 50, 60]] {
+            for value in values {
+                response.extend_from_slice(&value.to_be_bytes());
+            }
+        }
+        let (_, parsed) = Response::parse(&response, false).unwrap();
+        match parsed {
+            Response::Scrape(stats) => {
+                assert_eq!(stats.len(), 2);
+                assert_eq!(stats[0].seeders, 10);
+                assert_eq!(stats[0].completed, 20);
+                assert_eq!(stats[0].leechers, 30);
+                assert_eq!(stats[1].seeders, 40);
+            }
+            other => panic!("expected scrape, got {other:?}"),
+        }
+    }
 
     #[test]
     fn test_parse_announce() {
