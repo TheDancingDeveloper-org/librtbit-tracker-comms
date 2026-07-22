@@ -1,8 +1,24 @@
+labels:
+  platform: linux/amd64
+
 when:
   - event: push
     branch: main
   - event: manual
   - event: pull_request
+
+clone:
+  git:
+    image: alpine/git
+    environment:
+      GIT_AUTH_TOKEN:
+        from_secret: git_auth_token
+    commands:
+      - test -n "$GIT_AUTH_TOKEN"
+      - git init
+      - git remote add origin "http://git:$GIT_AUTH_TOKEN@100.92.54.45:3002/indexarr/librtbit-tracker-comms.git"
+      - git fetch --no-tags --depth=1 origin $CI_COMMIT_SHA
+      - git checkout FETCH_HEAD
 
 steps:
   - name: fmt
