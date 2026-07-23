@@ -11,9 +11,9 @@ tokio = "1"
 anyhow = "1"
 futures = "0.3"
 async-stream = "0.3"
-buffers = { version = "0.1.2", registry = "forgejo", package = "librtbit-buffers" }
-librtbit-core = { version = "0.1.5", registry = "forgejo" }
-bencode = { version = "0.1.5", registry = "forgejo", package = "librtbit-bencode" }
+buffers = { git = "https://github.com/TheDancingDeveloper-org/librtbit-buffers.git", package = "librtbit-buffers" }
+librtbit-core = { git = "https://github.com/TheDancingDeveloper-org/librtbit-core.git" }
+bencode = { git = "https://github.com/TheDancingDeveloper-org/librtbit-bencode.git", package = "librtbit-bencode" }
 byteorder = "1"
 serde = "1"
 serde_derive = "1"
