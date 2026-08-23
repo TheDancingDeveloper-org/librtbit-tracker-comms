@@ -4,16 +4,16 @@ version = "0.1.0"
 edition = "2024"
 description = "HTTP and UDP tracker communication for the rtbit BitTorrent client"
 license = "MIT"
-repository = "https://github.com/AusAgentSmith-org/librtbit-tracker-comms"
+repository = "https://github.com/TheDancingDeveloper-org/librtbit-tracker-comms"
 
 [dependencies]
 tokio = "1"
 anyhow = "1"
 futures = "0.3"
 async-stream = "0.3"
-buffers = { git = "https://github.com/AusAgentSmith-org/librtbit-buffers.git", tag = "v0.1.0", package = "librtbit-buffers" }
-librtbit-core = { git = "https://github.com/AusAgentSmith-org/librtbit-core.git", tag = "v0.1.0" }
-bencode = { git = "https://github.com/AusAgentSmith-org/librtbit-bencode.git", tag = "v0.1.0", package = "librtbit-bencode" }
+buffers = { git = "https://github.com/TheDancingDeveloper-org/librtbit-buffers.git", tag = "v0.1.0", package = "librtbit-buffers" }
+librtbit-core = { git = "https://github.com/TheDancingDeveloper-org/librtbit-core.git", tag = "v0.1.0" }
+bencode = { git = "https://github.com/TheDancingDeveloper-org/librtbit-bencode.git", tag = "v0.1.0", package = "librtbit-bencode" }
 byteorder = "1"
 serde = "1"
 serde_derive = "1"
